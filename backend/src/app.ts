@@ -15,6 +15,7 @@ import cookieParser from 'cookie-parser';
 //import Routes
 import authRoutes from './routes/authRoutes.js';
 import userRoutes from './routes/userRoutes.js';
+import instructorRoutes from './routes/instructorRoutes.js';
 
 
 dotenv.config();
@@ -58,7 +59,8 @@ app.use(morgan(process.env['NODE_ENV'] === 'production' ? 'combined' : 'dev'));
 
 // 5. Routes (سيتم إضافتها هنا)
 app.use('/api/auth', authRoutes);
-app.use('/api/user', userRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/instructors', instructorRoutes);
 // 6. 404 Handler
 app.use((req, _res, next) => {
   next(AppError.notFound(`Route ${req.originalUrl} not found`));

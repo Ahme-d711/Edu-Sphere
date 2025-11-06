@@ -1,12 +1,18 @@
 import { z } from 'zod';
 
 // === User Creation / Update Schema ===
-export const signupValidationSchema = z.object({
+export const userValidationSchema = z.object({
   name: z
     .string('Name is required')
     .trim()
     .min(2, 'Name must be at least 2 characters')
     .max(50, 'Name cannot exceed 50 characters'),
+
+  userName: z
+    .string('user name is required')
+    .trim()
+    .min(2, 'user name must be at least 2 characters')
+    .max(50, 'user name cannot exceed 50 characters'),
 
   email: z
     .string('Email is required')
@@ -49,7 +55,7 @@ export const loginSchema = z.object({
 });
 
 // === Query Schema (Pagination + Filtering + Sorting) ===
-const sortableFields = ['name', 'createdAt', 'email'] as const;
+const sortableFields = ['name', 'createdAt', 'email', 'userName'] as const;
 type SortField = typeof sortableFields[number];
 
 export const userQuerySchema = z.object({
@@ -86,30 +92,26 @@ export const userQuerySchema = z.object({
     })
     .refine((val) => val !== null, 'Invalid sort field')
     .catch(undefined),
-}).strict();
+}).catchall(z.string().or(z.array(z.string())).or(z.number()).optional());
 
-export const forgotPasswordSchema = z.object({
-  email: z.string().email('Invalid email address'),
-});
-
-export const resetPasswordSchema = z.object({
-  password: z
-    .string()
-    .min(8, 'Password must be at least 8 characters')
-    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
-    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
-    .regex(/[0-9]/, 'Password must contain at least one number'),
-});
 
 // === Types ===
-export type UserInput = z.infer<typeof signupValidationSchema>;
+export type UserInput = z.infer<typeof userValidationSchema>;
 export type UserQuery = z.infer<typeof userQuerySchema>;
 
 // === Partial Update Schema (PATCH) ===
-export const userUpdateSchema = signupValidationSchema
+export const userUpdateSchema = userValidationSchema
   .omit({ password: true })
   .partial()
   .refine(
     (data) => Object.keys(data).length > 0,
     'At least one field must be provided for update'
   );
+
+  export const userIdSchema = z.object({
+    userId: z
+      .string()
+      .regex(/^[0-9a-fA-F]{24}$/, 'User ID must be a valid MongoDB ObjectId'),
+  });
+
+  export type UserIdType = z.infer<typeof userIdSchema>;

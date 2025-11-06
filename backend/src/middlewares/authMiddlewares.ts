@@ -53,7 +53,7 @@ export const protect = asyncHandler(async (req: Request, _res: Response, next: N
 
   // 3. Check if user exists
   const user = await UserModel.findById(decoded.id).select('+passwordChangedAt');
-  if (!user) {
+  if (!user || !user.active) {
     return next(AppError.unauthorized('User no longer exists'));
   }
 

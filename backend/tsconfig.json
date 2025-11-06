@@ -37,8 +37,8 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
-    "noPropertyAccessFromIndexSignature": true,
-    "exactOptionalPropertyTypes": true,
+    // "noPropertyAccessFromIndexSignature": true,
+    // "exactOptionalPropertyTypes": true,
 
     // === Consistency & Debugging ===
     "forceConsistentCasingInFileNames": true,

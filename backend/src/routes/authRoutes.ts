@@ -5,8 +5,10 @@ import {
   forgotPassword,
   resetPassword,
   logout,
+  updatePassword,
 } from '../controllers/authController.js';
 import { loginLimiter } from '../middlewares/rateLimit.js';
+import { protect } from '../middlewares/authMiddlewares.js';
 
 const router = Router();
 
@@ -29,7 +31,7 @@ router.post('/login', loginLimiter, login);
  * @desc    Logout user and delete JWT
  * @access  Private
  */
-router.post('/logout', logout);
+router.post('/logout', protect, logout);
 
 
 /**
@@ -37,7 +39,7 @@ router.post('/logout', logout);
  * @desc    Send password reset email
  * @access  Public
  */
-router.post('/forgot-password', loginLimiter, forgotPassword);
+router.patch('/forgot-password', loginLimiter, forgotPassword);
 
 /**
  * @route   POST /api/auth/reset-password/:token
@@ -45,5 +47,12 @@ router.post('/forgot-password', loginLimiter, forgotPassword);
  * @access  Public
  */
 router.patch('/reset-password/:token', resetPassword);
+
+/**
+ * @route   PATCH /api/auth/update-password
+ * @desc    Update password with token
+ * @access  Public
+ */
+router.patch('/update-password', protect, updatePassword);
 
 export default router;

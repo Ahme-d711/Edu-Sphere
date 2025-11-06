@@ -44,6 +44,7 @@ const handleMongooseError = (err: unknown): AppError => {
     }
     return AppError.badRequest('Duplicate key');
   }
+    console.error('⚠️ Unknown Mongoose error:', err);
   return AppError.badRequest('Invalid request data');
 };
 

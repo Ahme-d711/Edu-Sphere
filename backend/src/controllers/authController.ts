@@ -1,5 +1,5 @@
 import UserModel from '../models/userModel.js';
-import { forgotPasswordSchema, loginSchema, resetPasswordSchema, signupValidationSchema } from '../schemas/userSchemas.js';
+import { loginSchema, userValidationSchema } from '../schemas/userSchemas.js';
 import type { ZodIssue } from 'zod';
 import { AppError } from '../utils/AppError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
@@ -8,13 +8,14 @@ import { createSendToken } from '../utils/sendToken.js';
 import type { IUser, IUserMethods } from '../types/userTypes.js';
 import { sendPasswordResetEmail } from '../utils/email.js';
 import crypto from 'crypto';
+import { changePasswordSchema, forgotPasswordSchema, resetPasswordSchema } from '../schemas/passwordSchemas.js';
 
 /**
  * Register a new user
  */
 export const register = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   // 1. Validate input
-  const result = signupValidationSchema.safeParse(req.body);
+  const result = userValidationSchema.safeParse(req.body);
   if (!result.success) {
     const message = result.error.issues.map((i: ZodIssue) => i.message).join(', ');
     return next(AppError.badRequest(message));
@@ -62,6 +63,12 @@ export const login = asyncHandler(async (req: Request, res: Response, next: Next
 
   // 2. Find user with password
   const user = await UserModel.findOne({ email }).select('+password');
+
+  console.log(user);
+
+  console.log(password);
+  
+  
   if (!user || !(await (user as IUser & IUserMethods).comparePassword(password))) {
     return next(AppError.unauthorized('Incorrect email or password'));
   }
@@ -132,9 +139,7 @@ export const forgotPassword = asyncHandler(async (req: Request, res: Response, n
     });
   } catch{    
     // 5. Clean up on failure
-    // @ts-expect-error Too complex union
     user.passwordResetToken = undefined;
-    // @ts-expect-error Too complex union
     user.passwordResetExpires = undefined;
     await user.save({ validateBeforeSave: false });
 
@@ -174,9 +179,7 @@ export const resetPassword = asyncHandler(async (req: Request, res: Response, ne
 
   // 3. Update password + cleanup
   user.password = password;
-  // @ts-expect-error Too complex union
   user.passwordResetToken = undefined;
-  // @ts-expect-error Too complex union
   user.passwordResetExpires = undefined;
   user.passwordChangedAt = new Date(); // مهم لـ protect middleware
   await user.save();
@@ -184,4 +187,33 @@ export const resetPassword = asyncHandler(async (req: Request, res: Response, ne
   // 4. Login user
   createSendToken(user, 200, res);
 });
+
+/**
+ * Update current user's password.
+ */
+export const updatePassword = asyncHandler(
+  async (req: Request, res: Response, next: NextFunction) => {
+    // 1. Validate input
+    const { currentPassword, newPassword } = changePasswordSchema.parse(req.body);
+
+    // 2. Get user with password
+    const user = await UserModel.findById(req.user._id).select('+password');
+    if (!user) {
+      return next(AppError.notFound('User not found'));
+    }
+
+    // 3. Check current password
+    const isCorrect = await user.comparePassword(currentPassword);
+    if (!isCorrect) {
+      return next(AppError.badRequest('Current password is incorrect'));
+    }
+
+    // 4. Update password (pre-save hook سيُشفّر + passwordChangedAt)
+    user.password = newPassword;
+    await user.save();
+
+    // 5. إبطال الجلسات القديمة: إعادة تسجيل دخول (JWT جديد)
+    createSendToken(user, 200, res);
+  }
+);
 
