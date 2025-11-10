@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { AppError } from '../utils/AppError.js';
 import { userValidationSchema } from '../schemas/userSchemas.js';
-import type { IUser, IUserMethods, IUserModel, TransformableUser } from '../types/userTypes.js';
+import type { IUser, IUserMethods, IUserModel } from '../types/userTypes.js';
 import type { Query } from 'mongoose';
 
 // === Schema ===
@@ -70,7 +70,7 @@ const userSchema = new Schema<IUser, IUserModel, IUserMethods>(
 
 
 // === Transform (إزالة _id, __v, password) ===
-function transformFn(_doc: unknown, ret: TransformableUser): TransformableUser {
+function transformFn(_doc: unknown, ret: Record<string, unknown>) {
   delete ret.__v;
   delete ret.password;
   delete ret.passwordResetToken;
@@ -121,7 +121,6 @@ userSchema.statics['validateUser'] = (data: Partial<IUser>) => {
 };
 
 // === Model ===
-// @ts-expect-error Too complex union
-const UserModel = model<IUser, IUserModel>('User', userSchema);
+const UserModel = model('User', userSchema as unknown as Schema) as unknown as IUserModel;
 
 export default UserModel;

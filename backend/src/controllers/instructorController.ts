@@ -2,23 +2,27 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import type { NextFunction, Request, Response } from 'express';
 import InstructorModel from '../models/instructorModel.js';
 import ApiFeatures from '../utils/ApiFeatures.js';
-import { instructorQuerySchema, instructorValidationSchema, updateInstructorSchema } from '../schemas/instructorSchemas.js';
+import { instructorCoursesQuerySchema, instructorQuerySchema, instructorValidationSchema, updateInstructorSchema } from '../schemas/instructorSchemas.js';
 import type { IInstructor } from '../types/instructorTypes.js';
 import type { Query } from 'mongoose';
+import { Types } from 'mongoose'; // Add this import
 import { filterObj } from '../utils/FilterObj.js';
 import { AppError } from '../utils/AppError.js';
 import UserModel from '../models/userModel.js';
+import { Course } from '../models/courseModel.js';
+import { restoreInstructorService } from '../service/instrucrotService.js';
+import type { ICourse } from '../types/courseTypes.js';
 
 /**
  * @desc Get all instructors
- * @route GET /api/v1/instructors
+ * @route GET /api/instructors
  * @access Public
  */
 export const getAllInstructors = asyncHandler(async (req: Request, res: Response) => {
   // 1. Validate query params
   const queryParams = instructorQuerySchema.parse(req.query);
 
-  const baseQuery = InstructorModel.find() satisfies Query<IInstructor[], IInstructor>;
+  const baseQuery = InstructorModel.find() as Query<IInstructor[], IInstructor>;
 
 
   // 2. Build query with ApiFeatures
@@ -60,7 +64,7 @@ export const getInstructor = asyncHandler(async (req: Request, res: Response, ne
 
 /**
  * @desc Create new instructor (admin only)
- * @route POST /api/v1/instructors
+ * @route POST /api/instructors
  * @access Private (admin)
  */
 export const createInstructor = asyncHandler(
@@ -115,7 +119,7 @@ export const createInstructor = asyncHandler(
 
 /**
  * @desc Update instructor by ID
- * @route PATCH /api/v1/instructors/:id
+ * @route PATCH /api/instructors/:id
  * @access Private (admin or self)
  */
 export const updateInstructor = asyncHandler(
@@ -168,89 +172,160 @@ export const updateInstructor = asyncHandler(
   }
 );
 
+
+/**
+ * @desc Get instructor's own courses (with filtering, search, pagination, sorting)
+ * @route GET /api/v1/instructor/courses
+ * @access Private (Instructor)
+ */
+export const getInstructorCourses = asyncHandler(
+  async (req: Request, res: Response, next: NextFunction) => {
+    // 1. Validate query parameters
+    const queryParams = instructorCoursesQuerySchema.parse(req.query);
+
+    // 2. Find instructor profile
+    const instructor = await InstructorModel.findOne({
+      user: req.user._id,
+    }).select('_id');
+
+    if (!instructor || !req.user.active) {
+      return next(AppError.forbidden('You do not have an active instructor profile'));
+    }
+
+    // 3. Build query with ApiFeatures
+    const features = new ApiFeatures(
+      Course.find({ instructor: instructor._id as Types.ObjectId }) as Query<ICourse[], ICourse>,
+      queryParams
+    )
+      .filter()
+      .search(['title', 'description'])
+      .sort()
+      .select()
+      .paginate();
+
+    // 4. Execute
+    const { results: courses, pagination } = await features.execute();
+
+    res.status(200).json({
+      status: 'success',
+      results: courses.length,
+      pagination,
+      data: { courses },
+    });
+  }
+);
+
+/**
+ * @desc Get instructor's own courses (with filtering, search, pagination, sorting)
+ * @route GET /api/v1/instructor/courses
+ * @access Private (Instructor)
+ */
+export const getUserInstructorCourses = asyncHandler(
+  async (req: Request, res: Response, next: NextFunction) => {
+    // 1. Validate query parameters
+    const queryParams = instructorCoursesQuerySchema.parse(req.query);
+
+    // 2. Find instructor profile
+    const instructor = await InstructorModel.findById(req.params.id).select('_id');
+
+    if (!instructor) {
+      return next(AppError.forbidden('You do not have an active instructor profile'));
+    }
+
+    // 3. Build query with ApiFeatures
+    const features = new ApiFeatures(
+      Course.find({ instructor: instructor._id as Types.ObjectId }) as Query<ICourse[], ICourse>,
+      queryParams
+    )
+      .filter()
+      .search(['title', 'description'])
+      .sort()
+      .select()
+      .paginate();
+
+    // 4. Execute
+    const { results: courses, pagination } = await features.execute();
+
+    res.status(200).json({
+      status: 'success',
+      results: courses.length,
+      pagination,
+      data: { courses },
+    });
+  }
+);
+
 /**
  * @desc Soft delete instructor by ID (admin only)
  * @route DELETE /api/v1/instructors/:id
  * @access Private (admin)
  */
-// export const deleteInstructor = asyncHandler(
-//   async (req: Request, res: Response, next: NextFunction) => {
-//     const instructorId = req.params.id;
+export const deleteInstructor = asyncHandler(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const instructorId = req.params.id;
 
-//     // 1. Find instructor with user reference
-//     const instructor = await InstructorModel.findById(instructorId).populate({
-//       path: 'user',
-//       select: '_id',
-//     });
+    // 1. Find instructor with user reference
+    const instructor = await InstructorModel.findById(instructorId).populate({
+      path: 'user',
+      select: '_id',
+    });
 
-//     if (!instructor) {
-//       return next(AppError.notFound('Instructor not found'));
-//     }
+    if (!instructor) {
+      return next(AppError.notFound('Instructor not found'));
+    }
 
-//     // 2. Prevent self-deletion if admin is the instructor
-//     const isSelf = req.user._id.toString() === instructor.user._id.toString();
-//     if (isSelf) {
-//       return next(AppError.forbidden('You cannot delete your own instructor profile'));
-//     }
+    // 2. Prevent self-deletion if admin is the instructor
+    const isSelf = req.user._id.toString() === instructor.user._id.toString();
+    if (isSelf) {
+      return next(AppError.forbidden('You cannot delete your own instructor profile'));
+    }
 
-//     // 3. Soft delete
-//     await InstructorModel.findByIdAndUpdate(
-//       instructorId,
-//       { isActive: false },
-//       { runValidators: true }
-//     );
+    await Promise.all([
+      InstructorModel.findByIdAndUpdate(instructorId, { isActive: false }, { runValidators: true }),
+      UserModel.findByIdAndUpdate(instructor.user._id, { role: 'student' }, { runValidators: true }),
+    ]);
 
-//     res.status(204).json({
-//       status: 'success',
-//       data: null,
-//     });
-//   }
-// );
+    res.status(204).json({
+      status: 'success',
+      data: null,
+    });
+  }
+);
+
 
 /**
- * @desc Reactivate instructor (admin only)
- * @route PATCH /api/v1/instructors/:id/reactivate
- * @access Private (admin)
+ * Restore soft-deleted instructor (admin only)
+ * @route   PATCH /api/v1/instructors/:id/restore
+ * @access  Private (admin)
  */
-// export const reactivateInstructor = asyncHandler(
-//   async (req: Request, res: Response, next: NextFunction) => {
-//     const instructorId = req.params.id;
+export const restoreInstructor = asyncHandler(
+  async (req: Request, res: Response, next: NextFunction) => {
+    
+    const instructor = await restoreInstructorService(req.params.id as string);
 
-//     // 1. Find instructor with necessary fields
-//     const instructor = await InstructorModel.findById(instructorId)
-//       .select('+isActive')
-//       .populate({
-//         path: 'user',
-//         select: '_id',
-//       });
+    if (!instructor) {
+      return next(AppError.notFound('Instructor not found'));
+    }
 
-//     if (!instructor) {
-//       return next(AppError.notFound('Instructor not found'));
-//     }
+    if (instructor.isActive) {
+      return next(AppError.badRequest('Instructor is already active'));
+    }
 
-//     // 2. Check current status
-//     if (instructor.isActive) {
-//       return next(AppError.badRequest('Instructor is already active'));
-//     }
+    // 2. Restore
+    await instructor.restore();
 
-//     // 3. Reactivate
-//     const updatedInstructor = await InstructorModel.findByIdAndUpdate(
-//       instructorId,
-//       { isActive: true },
-//       {
-//         new: true,
-//         runValidators: true,
-//         select: '-password -__v',
-//       }
-//     ).populate({
-//       path: 'user',
-//       select: 'name email profilePicture role gender',
-//     });
+    await UserModel.findByIdAndUpdate(
+      instructor.user,
+      {role: "instructor"},
+      {runValidators: true}
+    )
 
-//     res.status(200).json({
-//       status: 'success',
-//       message: 'Instructor reactivated successfully',
-//       data: { instructor: updatedInstructor },
-//     });
-//   }
-// );
+    
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Instructor restored successfully',
+      data: { instructor },
+    });
+  }
+);

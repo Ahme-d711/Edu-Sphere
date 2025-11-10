@@ -36,4 +36,8 @@ export class AppError extends Error {
   static notFound(msg = 'Not found') {
     return new AppError(msg, 404);
   }
+
+  static conflict(message = 'Conflict') {
+    return new AppError(message, 409,);
+  }
 }

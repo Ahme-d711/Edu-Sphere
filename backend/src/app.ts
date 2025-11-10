@@ -16,6 +16,8 @@ import cookieParser from 'cookie-parser';
 import authRoutes from './routes/authRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import instructorRoutes from './routes/instructorRoutes.js';
+import courseRoutes from './routes/courseRoutes.js'
+import categoryRoutes from './routes/categoryRoutes.js';
 
 
 dotenv.config();
@@ -61,6 +63,10 @@ app.use(morgan(process.env['NODE_ENV'] === 'production' ? 'combined' : 'dev'));
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/instructors', instructorRoutes);
+app.use('/api/courses', courseRoutes);
+app.use('/api/category', categoryRoutes);
+
+
 // 6. 404 Handler
 app.use((req, _res, next) => {
   next(AppError.notFound(`Route ${req.originalUrl} not found`));

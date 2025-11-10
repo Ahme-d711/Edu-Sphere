@@ -32,6 +32,11 @@ const instructorSchema = new Schema<IInstructor>(
       twitter: { type: String, trim: true },
       youtube: { type: String, trim: true },
     },
+    isActive: {
+      type: Boolean,
+      default: true,
+      select: false,
+    },
     ratingAverage: {
       type: Number,
       default: 0,
@@ -117,6 +122,11 @@ instructorSchema.methods.updateStats = async function () {
     this.totalStudents = 0;
   }
 
+  await this.save({ validateBeforeSave: false });
+};
+
+instructorSchema.methods.restore = async function () {
+  this.isActive = true;
   await this.save({ validateBeforeSave: false });
 };
 

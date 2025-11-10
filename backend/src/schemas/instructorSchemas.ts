@@ -52,3 +52,25 @@ export const instructorQuerySchema = z.object({
   },
   { message: 'gte must be <= lte', path: ['ratingAverage[gte]'] }
 );
+
+export const instructorCoursesQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).optional(),
+  limit: z.coerce.number().int().min(1).max(50).optional(),
+  sort: z
+    .string()
+    .optional()
+    .refine(
+      (val) => !val || /^(-?)(title|price|createdAt|status|lessonsCount|averageRating)$/.test(val),
+      'Invalid sort field'
+    ),
+  fields: z.string().optional(),
+  search: z.string().trim().min(2).optional(),
+
+  // Filters
+  status: z.enum(['draft', 'published', 'archived']).optional(),
+  level: z.enum(['beginner', 'intermediate', 'advanced']).optional(),
+  'price[gte]': z.coerce.number().min(0).optional(),
+  'price[lte]': z.coerce.number().min(0).optional(),
+  'averageRating[gte]': z.coerce.number().min(0).max(5).optional(),
+  category: z.string().regex(/^[0-9a-fA-F]{24}$/).optional(),
+});

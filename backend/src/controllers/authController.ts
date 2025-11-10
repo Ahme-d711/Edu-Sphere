@@ -5,7 +5,6 @@ import { AppError } from '../utils/AppError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import type { Request, Response, NextFunction } from 'express';
 import { createSendToken } from '../utils/sendToken.js';
-import type { IUser, IUserMethods } from '../types/userTypes.js';
 import { sendPasswordResetEmail } from '../utils/email.js';
 import crypto from 'crypto';
 import { changePasswordSchema, forgotPasswordSchema, resetPasswordSchema } from '../schemas/passwordSchemas.js';
@@ -69,7 +68,7 @@ export const login = asyncHandler(async (req: Request, res: Response, next: Next
   console.log(password);
   
   
-  if (!user || !(await (user as IUser & IUserMethods).comparePassword(password))) {
+  if (!user || !(await user.comparePassword(password))) {
     return next(AppError.unauthorized('Incorrect email or password'));
   }
 
@@ -121,7 +120,7 @@ export const forgotPassword = asyncHandler(async (req: Request, res: Response, n
   }
 
   // 3. Generate token
-  const resetToken = await (user as IUser & IUserMethods).generateResetToken();
+  const resetToken = await user.generateResetToken();
   await user.save({ validateBeforeSave: false });  
 
   // 4. Send email

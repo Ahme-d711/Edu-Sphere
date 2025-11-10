@@ -18,6 +18,7 @@ export interface IInstructor extends Document {
   ratingCount: number;
   totalStudents: number;
   totalCourses: number;
+  isActive:boolean;
   createdAt: Date;
   updatedAt: Date;
 
@@ -26,4 +27,5 @@ export interface IInstructor extends Document {
 
   // Methods
   updateStats(): Promise<void>;
+  restore(): Promise<void>;
 }

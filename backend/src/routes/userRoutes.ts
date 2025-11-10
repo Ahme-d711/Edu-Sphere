@@ -75,7 +75,7 @@ router
 
 /**
  * Reactivate a deactivated user (admin only)
- * @route   PATCH /api/v1/users/:id/reactivate
+ * @route   PATCH /api/users/:id/reactivate
  * @access  Private (admin)
  */
 router

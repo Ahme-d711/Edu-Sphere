@@ -94,9 +94,11 @@ class ApiFeatures<T extends Document> {
       const fields = (this.queryParams.fields as string)
         .split(',')
         .join(' ');
-      this.query = this.query.select(fields);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      this.query = this.query.select(fields) as any;
     } else {
-      this.query = this.query.select('-__v');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      this.query = this.query.select('-__v') as any;
     }
     return this;
   }

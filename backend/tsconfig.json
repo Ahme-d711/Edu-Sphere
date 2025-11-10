@@ -21,11 +21,11 @@
     "resolveJsonModule": true,
     "types": ["node"],
 
-    // === Strict Mode (كامل) ===
+    // // === Strict Mode (كامل) ===
     "strict": true,
+    "strictFunctionTypes": true,
     "strictNullChecks": true,
     "strictBindCallApply": true,
-    "strictFunctionTypes": true,
     "noImplicitAny": true,
     "noImplicitThis": true,
     "alwaysStrict": true,

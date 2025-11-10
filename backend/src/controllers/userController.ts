@@ -328,7 +328,7 @@ export const reactivateUser = asyncHandler(
 
     // 3. Populate user data (optional, for consistency)
     await user.populate({
-      path: 'profilePicture',
+      path: 'profilePic',
       select: 'secure_url',
     });
 
