@@ -61,18 +61,13 @@ export const login = asyncHandler(async (req: Request, res: Response, next: Next
   const { email, password } = result.data;
 
   // 2. Find user with password
-  const user = await UserModel.findOne({ email }).select('+password');
+  const user = await UserModel.findOne({ email }).select('+password +isActive');
 
-  console.log(user);
-
-  console.log(password);
-  
-  
   if (!user || !(await user.comparePassword(password))) {
     return next(AppError.unauthorized('Incorrect email or password'));
   }
 
-  if (!user.active) {
+  if (!user.isActive) {
     return next(AppError.unauthorized('Account is not active'));
   }
 

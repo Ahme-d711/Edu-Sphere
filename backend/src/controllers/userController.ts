@@ -125,7 +125,7 @@ export const updateProfilePic = asyncHandler(
  * Soft delete current user account
  */
 export const deleteMe = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-  const user = await UserModel.findById(req.user._id).select('+active +profilePic');
+  const user = await UserModel.findById(req.user._id).select('+isActive +profilePic');
 
   if (!user) {
     return next(AppError.notFound('User not found'));
@@ -147,7 +147,7 @@ export const deleteMe = asyncHandler(async (req: Request, res: Response, next: N
   }
 
   // 2. Soft delete
-  user.active = false;
+  user.isActive = false;
   user.profilePic = "";
   await user.save({ validateBeforeSave: false });
 
@@ -176,7 +176,7 @@ export const getAllUsers = asyncHandler(
     const queryParams = userQuerySchema.parse(req.query);
 
     // 2. Build query with ApiFeatures
-    const features = new ApiFeatures<IUser>(UserModel.find({ active: true }), queryParams)
+    const features = new ApiFeatures<IUser>(UserModel.find({ isActive: true }), queryParams)
       .filter()
       .search(['userName'])
       .sort()
@@ -206,9 +206,9 @@ export const getAllUsers = asyncHandler(
  */
 export const getUser = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   const user = await UserModel.findById(req.params['id'])
-  .select('-password -passwordResetToken -passwordResetExpires');
+  .select('-password -passwordResetToken -passwordResetExpires +isActive');
 
-  if (!user || !user.active) {
+  if (!user || !user.isActive) {
     return next(AppError.notFound('No user found with that ID'));
   }
 
@@ -232,7 +232,7 @@ export const updateUser = asyncHandler(async (req: Request, res: Response, next:
   }
 
   // 2. فلترة الحقول المسموحة (بدون email)
-  const filteredBody = filterObj(req.body, 'name', 'role', 'phoneNumber', 'gender', 'active');
+  const filteredBody = filterObj(req.body, 'name', 'phoneNumber', 'gender');
 
   // 3. تحديث المستخدم
     const user = await UserModel.findByIdAndUpdate(req.params['id'], filteredBody, {
@@ -246,7 +246,7 @@ export const updateUser = asyncHandler(async (req: Request, res: Response, next:
   }
 
   // 4. تحقق من الحالة (soft delete)
-  if (!user.active) {
+  if (!user.isActive) {
     return next(AppError.badRequest('This user account is deactivated'));
   }
 
@@ -262,13 +262,13 @@ export const updateUser = asyncHandler(async (req: Request, res: Response, next:
  */
 export const deleteUser = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   // 1. جلب المستخدم مع الصورة
-  const user = await  UserModel.findById(req.params['id']).select('+profilePic +active')
+  const user = await  UserModel.findById(req.params['id']).select('+profilePic +isActive')
 
   if (!user) {
     return next(AppError.notFound('No user found with that ID'));
   }
 
-  if (!user.active) {
+  if (!user.isActive) {
     return next(AppError.badRequest('This user is already deactivated'));
   }
 
@@ -291,7 +291,7 @@ export const deleteUser = asyncHandler(async (req: Request, res: Response, next:
   await UserModel.findByIdAndUpdate(
     req.params['id'],
     { 
-      active: false,
+      isActive: false,
       profilePic: undefined 
     },
     { runValidators: true }

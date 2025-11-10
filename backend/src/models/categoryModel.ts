@@ -128,7 +128,7 @@ categorySchema.statics.findBySlug = function (slug: string) {
   return this.findOne({ slug, isActive: true });
 };
 
-  const CategoryModel = (mongoose.models.Category ||
-    (mongoose.model('Category', categorySchema as unknown as Schema) as unknown)) as unknown as ICategoryModel;
-  export const Category = CategoryModel;
+const CategoryModel = (mongoose.models.Category ||
+  (mongoose.model('Category', categorySchema as unknown as Schema) as unknown)) as unknown as ICategoryModel;
+export const Category = CategoryModel;
 

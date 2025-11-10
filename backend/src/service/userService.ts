@@ -20,9 +20,9 @@ export const findUserIncludingInactive = async (id: string) => {
 export const reactivateUserService = async (id: string) => {
   const user = await findUserIncludingInactive(id);
 
-  if (user.active) throw AppError.badRequest('This user is already active');
+  if (user.isActive) throw AppError.badRequest('This user is already active');
 
-  await UserModel.updateOne({ _id: user._id }, { $set: { active: true } });
+  await UserModel.updateOne({ _id: user._id }, { $set: { isActive: true } });
 
   const updatedUser = await UserModel.findById(id).select(
     '-password -passwordResetToken -passwordResetExpires'

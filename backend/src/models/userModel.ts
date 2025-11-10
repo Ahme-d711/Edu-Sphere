@@ -56,7 +56,7 @@ const userSchema = new Schema<IUser, IUserModel, IUserMethods>(
       required: [true, 'Gender is required'],
       enum: ['male', 'female', 'other'] as const,
     },
-    active: { type: Boolean, default: true },
+    isActive: { type: Boolean, default: true, select: false },
     passwordResetToken: { type: String, select: false },
     passwordResetExpires: { type: Date, select: false },
     passwordChangedAt: {type: Date, select: false}
@@ -92,7 +92,7 @@ userSchema.pre('save', async function (next) {
 userSchema.pre<Query<IUser[], IUser>>(/^find/, function (next) {
   if ((this).getQuery().includeInactive) return next();
 
-  this.find({ active: { $ne: false } });
+  this.find({ isActive: { $ne: false } });
   next();
 });
 

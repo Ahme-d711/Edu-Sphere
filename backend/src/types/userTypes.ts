@@ -9,7 +9,7 @@ export interface IUser extends Document {
   password?: string;
   phoneNumber?: string;
   profilePic?: string;
-  active?: boolean;
+  isActive?: boolean;
   role: 'admin' | 'student' | 'instructor';
   gender: 'male' | 'female' | 'other';
   isVerified?: boolean;

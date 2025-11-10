@@ -5,7 +5,7 @@ import ApiFeatures from '../utils/ApiFeatures.js';
 import { instructorCoursesQuerySchema, instructorQuerySchema, instructorValidationSchema, updateInstructorSchema } from '../schemas/instructorSchemas.js';
 import type { IInstructor } from '../types/instructorTypes.js';
 import type { Query } from 'mongoose';
-import { Types } from 'mongoose'; // Add this import
+import {type Types } from 'mongoose'; // Add this import
 import { filterObj } from '../utils/FilterObj.js';
 import { AppError } from '../utils/AppError.js';
 import UserModel from '../models/userModel.js';
@@ -79,11 +79,11 @@ export const createInstructor = asyncHandler(
     const { user: userId, title, bio, expertise, socialLinks } = result.data;
 
     // 2. Check if user exists and is active
-    const user = await UserModel.findById(userId);
+    const user = await UserModel.findById(userId).select("+isActive");
     if (!user) {
       return next(AppError.badRequest('User not found'));
     }
-    if (!user.active) {
+    if (!user.isActive) {
       return next(AppError.badRequest('Cannot assign deactivated user as instructor'));
     }
 
@@ -188,7 +188,7 @@ export const getInstructorCourses = asyncHandler(
       user: req.user._id,
     }).select('_id');
 
-    if (!instructor || !req.user.active) {
+    if (!instructor || !req.user.isActive) {
       return next(AppError.forbidden('You do not have an active instructor profile'));
     }
 
