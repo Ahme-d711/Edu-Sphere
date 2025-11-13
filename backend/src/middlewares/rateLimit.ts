@@ -1,5 +1,13 @@
 import rateLimit from 'express-rate-limit';
 
+export const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 دقيقة
+  max: 100, // 100 طلب لكل IP
+  message: { status: 'fail', message: 'Too many requests' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 export const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 دقيقة
   max: 5, // 5 محاولات

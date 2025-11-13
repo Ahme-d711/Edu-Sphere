@@ -43,6 +43,7 @@
     // === Consistency & Debugging ===
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
+    "noErrorTruncation": false,
     "preserveConstEnums": true,
 
     // === Performance ===

@@ -5,11 +5,11 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import cors from 'cors';
 import compression from 'compression';
-import rateLimit from 'express-rate-limit';
 import { AppError } from './utils/AppError.js';
 import { globalError } from './middlewares/globalError.js';
 import { connectDB } from './config/db.js';
 import cookieParser from 'cookie-parser';
+import { limiter } from './middlewares/rateLimit.js';
 
 
 //import Routes
@@ -18,6 +18,9 @@ import userRoutes from './routes/userRoutes.js';
 import instructorRoutes from './routes/instructorRoutes.js';
 import courseRoutes from './routes/courseRoutes.js'
 import categoryRoutes from './routes/categoryRoutes.js';
+import lessonRoutes from './routes/lessonRoutes.js';
+import enrollmentRoutes from './routes/enrollmentRoutes.js'
+import adminRoutes from './routes/adminRoutes.js';
 
 
 dotenv.config();
@@ -45,13 +48,6 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 
 // 3. Rate Limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 دقيقة
-  max: 100, // 100 طلب لكل IP
-  message: { status: 'fail', message: 'Too many requests' },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
 app.use('/api', limiter);
 
 
@@ -65,6 +61,11 @@ app.use('/api/users', userRoutes);
 app.use('/api/instructors', instructorRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/category', categoryRoutes);
+app.use('/api/lessons', lessonRoutes);
+app.use('/api/enrollments', enrollmentRoutes);
+app.use('/api/dashboard', adminRoutes);
+
+
 
 
 // 6. 404 Handler

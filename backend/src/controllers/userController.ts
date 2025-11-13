@@ -2,7 +2,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import type { NextFunction, Request, Response } from "express";
 import type { IUser } from "../types/userTypes.js";
 import { AppError } from "../utils/AppError.js";
-import { deleteFromCloudinary, uploadToCloudinary } from "../service/imageService.js";
+import { deleteFromCloudinary, uploadToCloudinary } from "../service/cloudinaryService.js";
 import { filterObj } from "../utils/FilterObj.js";
 import UserModel from "../models/userModel.js";
 import { userQuerySchema } from "../schemas/userSchemas.js";

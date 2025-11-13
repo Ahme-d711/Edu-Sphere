@@ -6,7 +6,7 @@ import {
   getMe, getUser, reactivateUser, updateMe, updateProfilePic, updateUser
 } from '../controllers/userController.js';
 import { protect, restrictTo } from '../middlewares/authMiddlewares.js';
-import { uploadSingle } from '../middlewares/uploadImage.js';
+import { uploadSingle } from '../middlewares/uploadImage&Video.js';
 const router = Router();
 
 /**
